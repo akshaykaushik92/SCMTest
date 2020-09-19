@@ -10,10 +10,7 @@ namespace SCMTestPromotionEngine
     public class BusniessLogic
     {
         private readonly ILogger<BusniessLogic> _logger;
-        public BusniessLogic(ILogger<BusniessLogic> logger)
-        {
-            _logger = logger;
-        }
+
         public double CalculateTotal(CheckoutQuantities checkoutQuantities)
         {
             try
@@ -38,24 +35,52 @@ namespace SCMTestPromotionEngine
 
         private double CalculateSkuAPrice(CheckoutQuantities cartQuantity)
         {
-            double priceOfA = 0;
-            DataAccessLayer dataAccessLayer = new DataAccessLayer();
-            var applicablePromotionIds = dataAccessLayer.GetPromotionId("A");
-            foreach (var item in applicablePromotionIds)
+            try
             {
-                switch (item.PromotionTypeName)
+                double priceOfA = 0;
+                DataAccessLayer dataAccessLayer = new DataAccessLayer();
+                var applicablePromotionIds = dataAccessLayer.GetPromotionId("A");
+                foreach (var item in applicablePromotionIds)
                 {
-                    case "PromotionType1":
-                        priceOfA = PromotionType1("A", cartQuantity.QuantitySkuA);
-                        break;
+                    switch (item.PromotionTypeName)
+                    {
+                        case "PromotionType1":
+                            priceOfA = CalculatePromotionType1("A", cartQuantity.QuantitySkuA);
+                            break;
+                    }
                 }
+                return priceOfA;
             }
-            return priceOfA;
+            catch(Exception ex)
+            {
+                _logger.LogError("Error occured in CalculateSkuAPrice", ex);
+                throw ex;
+            }
         }
 
         private double CalculateSkuBPrice(CheckoutQuantities cartQuantity)
         {
-            return 0;
+            try
+            {
+                double priceOfB = 0;
+                DataAccessLayer dataAccessLayer = new DataAccessLayer();
+                var applicablePromotionIds = dataAccessLayer.GetPromotionId("B");
+                foreach (var item in applicablePromotionIds)
+                {
+                    switch (item.PromotionTypeName)
+                    {
+                        case "PromotionType1":
+                            priceOfB = CalculatePromotionType1("B", cartQuantity.QuantitySkuB);
+                            break;
+                    }
+                }
+                return priceOfB;
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError("Error occured in CalculateSkuBPrice", ex);
+                throw ex;
+            }
         }
 
         private double CalculateSkuCPrice(CheckoutQuantities cartQuantity)
@@ -68,21 +93,29 @@ namespace SCMTestPromotionEngine
             return 0;
         }
 
-        private double PromotionType1(string sku, int quantity)
+        private double CalculatePromotionType1(string sku, int quantity)
         {
-            double price = 0;
-            DataAccessLayer dataAccessLayer = new DataAccessLayer();
-            var pricing = dataAccessLayer.GetPricing();
-            var promotionType1 = dataAccessLayer.GetPromotionType1();
-            if (sku == "A")
+            try
             {
-                var promotionPrice = promotionType1.Where(x => x.SkuName == sku).Select(x => x.PromotionPricing).FirstOrDefault();
-                var skuMultiple = promotionType1.Where(x => x.SkuName == sku).Select(x => x.SkuMultiple).FirstOrDefault();
-                var actualPricing = pricing.Where(x => x.SkuName == sku).FirstOrDefault();
-                price = (quantity / skuMultiple) * promotionPrice + (quantity % skuMultiple) * actualPricing.Price;
-            }
+                double price = 0;
+                DataAccessLayer dataAccessLayer = new DataAccessLayer();
+                var pricing = dataAccessLayer.GetPricing();
+                var promotionType1 = dataAccessLayer.GetPromotionType1();
+                if (sku == "A")
+                {
+                    var promotionPrice = promotionType1.Where(x => x.SkuName == sku).Select(x => x.PromotionPricing).FirstOrDefault();
+                    var skuMultiple = promotionType1.Where(x => x.SkuName == sku).Select(x => x.SkuMultiple).FirstOrDefault();
+                    var actualPricing = pricing.Where(x => x.SkuName == sku).FirstOrDefault();
+                    price = (quantity / skuMultiple) * promotionPrice + (quantity % skuMultiple) * actualPricing.Price;
+                }
 
-            return price;
+                return price;
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError("Error occured in CalculatePromotionType1", ex);
+                throw ex;
+            }
         }
     }
 }
