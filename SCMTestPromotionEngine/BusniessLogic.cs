@@ -3,6 +3,7 @@ using SCMTestPromotionEngine.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace SCMTestPromotionEngine
@@ -85,36 +86,52 @@ namespace SCMTestPromotionEngine
 
         private double CalculateSkuCPrice(CheckoutQuantities cartQuantity)
         {
-            double priceOfC = 0;
-            DataAccessLayer dataAccessLayer = new DataAccessLayer();
-            var applicablePromotionIds = dataAccessLayer.GetPromotionId("C");
-            foreach (var item in applicablePromotionIds)
+            try
             {
-                switch (item.PromotionTypeName)
+                double priceOfC = 0;
+                DataAccessLayer dataAccessLayer = new DataAccessLayer();
+                var applicablePromotionIds = dataAccessLayer.GetPromotionId("C");
+                foreach (var item in applicablePromotionIds)
                 {
-                    case "PromotionType2":
-                        priceOfC = PromotionType2("C", cartQuantity);
-                        break;
+                    switch (item.PromotionTypeName)
+                    {
+                        case "PromotionType2":
+                            priceOfC = CalculatePromotionType2("C", cartQuantity);
+                            break;
+                    }
                 }
+                return priceOfC;
             }
-            return priceOfC;
+            catch(Exception ex)
+            {
+                _logger.LogError("Error occured in CalculateSkuCPrice", ex);
+                throw ex;
+            }
         }
 
         private double CalculateSkuDPrice(CheckoutQuantities cartQuantity)
         {
-            double priceOfD = 0;
-            DataAccessLayer dataAccessLayer = new DataAccessLayer();
-            var applicablePromotionIds = dataAccessLayer.GetPromotionId("D");
-            foreach (var item in applicablePromotionIds)
+            try
             {
-                switch (item.PromotionTypeName)
+                double priceOfD = 0;
+                DataAccessLayer dataAccessLayer = new DataAccessLayer();
+                var applicablePromotionIds = dataAccessLayer.GetPromotionId("D");
+                foreach (var item in applicablePromotionIds)
                 {
-                    case "PromotionType2":
-                        priceOfD = PromotionType2("D", cartQuantity);
-                        break;
+                    switch (item.PromotionTypeName)
+                    {
+                        case "PromotionType2":
+                            priceOfD = CalculatePromotionType2("D", cartQuantity);
+                            break;
+                    }
                 }
+                return priceOfD;
             }
-            return priceOfD;
+            catch(Exception ex)
+            {
+                _logger.LogError("Error occured in CalculateSkuDPrice", ex);
+                throw ex;
+            }
         }
 
         private double CalculatePromotionType1(string sku, int quantity)
@@ -139,40 +156,48 @@ namespace SCMTestPromotionEngine
             }
         }
 
-        private double PromotionType2(string sku, CheckoutQuantities cartQuantity)
+        private double CalculatePromotionType2(string sku, CheckoutQuantities cartQuantity)
         {
-            double price = 0;
-            int promotionQuantity = 0;
-            DataAccessLayer dataAccessLayer = new DataAccessLayer();
-            var pricing = dataAccessLayer.GetPricing();
-            var promotionType2 = dataAccessLayer.GetPromotionType2();
-
-            var promotion = promotionType2.Where(x => x.SkuName == sku).FirstOrDefault();
-            var actualPricing = pricing.Where(x => x.SkuName == sku).FirstOrDefault();
-
-            if (sku == "C")
+            try
             {
-                if (cartQuantity.QuantitySkuD <= cartQuantity.QuantitySkuC)
+                double price = 0;
+                int promotionQuantity = 0;
+                DataAccessLayer dataAccessLayer = new DataAccessLayer();
+                var pricing = dataAccessLayer.GetPricing();
+                var promotionType2 = dataAccessLayer.GetPromotionType2();
+
+                var promotion = promotionType2.Where(x => x.SkuName == sku).FirstOrDefault();
+                var actualPricing = pricing.Where(x => x.SkuName == sku).FirstOrDefault();
+
+                if (sku == "C")
                 {
-                    promotionQuantity = cartQuantity.QuantitySkuC - (cartQuantity.QuantitySkuC - cartQuantity.QuantitySkuD);
-                    cartQuantity.QuantitySkuC = cartQuantity.QuantitySkuC - promotionQuantity;
-                    cartQuantity.QuantitySkuD = cartQuantity.QuantitySkuD - promotionQuantity;
-                }
-                else
-                {
-                    promotionQuantity = cartQuantity.QuantitySkuD - (cartQuantity.QuantitySkuD - cartQuantity.QuantitySkuC);
-                    cartQuantity.QuantitySkuD = cartQuantity.QuantitySkuD - promotionQuantity;
-                    cartQuantity.QuantitySkuC = 0;
+                    if (cartQuantity.QuantitySkuD <= cartQuantity.QuantitySkuC)
+                    {
+                        promotionQuantity = cartQuantity.QuantitySkuC - (cartQuantity.QuantitySkuC - cartQuantity.QuantitySkuD);
+                        cartQuantity.QuantitySkuC = cartQuantity.QuantitySkuC - promotionQuantity;
+                        cartQuantity.QuantitySkuD = cartQuantity.QuantitySkuD - promotionQuantity;
+                    }
+                    else
+                    {
+                        promotionQuantity = cartQuantity.QuantitySkuD - (cartQuantity.QuantitySkuD - cartQuantity.QuantitySkuC);
+                        cartQuantity.QuantitySkuD = cartQuantity.QuantitySkuD - promotionQuantity;
+                        cartQuantity.QuantitySkuC = 0;
+                    }
+
+                    price = promotionQuantity * promotion.PromotionPricing + cartQuantity.QuantitySkuC * actualPricing.Price;
+
                 }
 
-                price = promotionQuantity * promotion.PromotionPricing + cartQuantity.QuantitySkuC * actualPricing.Price;
+                else if (sku == "D")
+                    price = cartQuantity.QuantitySkuD * actualPricing.Price;
 
+                return price;
             }
-
-            else if (sku == "D")
-                price = cartQuantity.QuantitySkuD * actualPricing.Price;
-
-            return price;
+            catch (Exception ex)
+            {
+                _logger.LogError("Error Occured in CaluculatePromotionType2", ex);
+                throw ex;
+            }
         }
     }
 }
