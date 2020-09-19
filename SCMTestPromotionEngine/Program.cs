@@ -21,6 +21,8 @@ namespace SCMTestPromotionEngine
 
             BusniessLogic busniessLogic = new BusniessLogic();
             double total = busniessLogic.CalculateTotal(quantities);
+
+            Console.WriteLine(total);
         }
     }
 }
