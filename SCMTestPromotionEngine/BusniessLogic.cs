@@ -85,12 +85,36 @@ namespace SCMTestPromotionEngine
 
         private double CalculateSkuCPrice(CheckoutQuantities cartQuantity)
         {
-            return 0;
+            double priceOfC = 0;
+            DataAccessLayer dataAccessLayer = new DataAccessLayer();
+            var applicablePromotionIds = dataAccessLayer.GetPromotionId("C");
+            foreach (var item in applicablePromotionIds)
+            {
+                switch (item.PromotionTypeName)
+                {
+                    case "PromotionType2":
+                        priceOfC = PromotionType2("C", cartQuantity);
+                        break;
+                }
+            }
+            return priceOfC;
         }
 
         private double CalculateSkuDPrice(CheckoutQuantities cartQuantity)
         {
-            return 0;
+            double priceOfD = 0;
+            DataAccessLayer dataAccessLayer = new DataAccessLayer();
+            var applicablePromotionIds = dataAccessLayer.GetPromotionId("D");
+            foreach (var item in applicablePromotionIds)
+            {
+                switch (item.PromotionTypeName)
+                {
+                    case "PromotionType2":
+                        priceOfD = PromotionType2("D", cartQuantity);
+                        break;
+                }
+            }
+            return priceOfD;
         }
 
         private double CalculatePromotionType1(string sku, int quantity)
@@ -101,13 +125,10 @@ namespace SCMTestPromotionEngine
                 DataAccessLayer dataAccessLayer = new DataAccessLayer();
                 var pricing = dataAccessLayer.GetPricing();
                 var promotionType1 = dataAccessLayer.GetPromotionType1();
-                if (sku == "A")
-                {
-                    var promotionPrice = promotionType1.Where(x => x.SkuName == sku).Select(x => x.PromotionPricing).FirstOrDefault();
-                    var skuMultiple = promotionType1.Where(x => x.SkuName == sku).Select(x => x.SkuMultiple).FirstOrDefault();
-                    var actualPricing = pricing.Where(x => x.SkuName == sku).FirstOrDefault();
-                    price = (quantity / skuMultiple) * promotionPrice + (quantity % skuMultiple) * actualPricing.Price;
-                }
+
+                var promotion = promotionType1.Where(x => x.SkuName == sku).FirstOrDefault();
+                var actualPricing = pricing.Where(x => x.SkuName == sku).FirstOrDefault();
+                price = (quantity / promotion.SkuMultiple) * promotion.PromotionPricing + (quantity % promotion.SkuMultiple) * actualPricing.Price;
 
                 return price;
             }
@@ -116,6 +137,11 @@ namespace SCMTestPromotionEngine
                 _logger.LogError("Error occured in CalculatePromotionType1", ex);
                 throw ex;
             }
+        }
+
+        private double PromotionType2(string sku, CheckoutQuantities cartQuantity)
+        {
+            return 0;
         }
     }
 }
