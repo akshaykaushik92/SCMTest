@@ -141,7 +141,38 @@ namespace SCMTestPromotionEngine
 
         private double PromotionType2(string sku, CheckoutQuantities cartQuantity)
         {
-            return 0;
+            double price = 0;
+            int promotionQuantity = 0;
+            DataAccessLayer dataAccessLayer = new DataAccessLayer();
+            var pricing = dataAccessLayer.GetPricing();
+            var promotionType2 = dataAccessLayer.GetPromotionType2();
+
+            var promotion = promotionType2.Where(x => x.SkuName == sku).FirstOrDefault();
+            var actualPricing = pricing.Where(x => x.SkuName == sku).FirstOrDefault();
+
+            if (sku == "C")
+            {
+                if (cartQuantity.QuantitySkuD <= cartQuantity.QuantitySkuC)
+                {
+                    promotionQuantity = cartQuantity.QuantitySkuC - (cartQuantity.QuantitySkuC - cartQuantity.QuantitySkuD);
+                    cartQuantity.QuantitySkuC = cartQuantity.QuantitySkuC - promotionQuantity;
+                    cartQuantity.QuantitySkuD = cartQuantity.QuantitySkuD - promotionQuantity;
+                }
+                else
+                {
+                    promotionQuantity = cartQuantity.QuantitySkuD - (cartQuantity.QuantitySkuD - cartQuantity.QuantitySkuC);
+                    cartQuantity.QuantitySkuD = cartQuantity.QuantitySkuD - promotionQuantity;
+                    cartQuantity.QuantitySkuC = 0;
+                }
+
+                price = promotionQuantity * promotion.PromotionPricing + cartQuantity.QuantitySkuC * actualPricing.Price;
+
+            }
+
+            else if (sku == "D")
+                price = cartQuantity.QuantitySkuD * actualPricing.Price;
+
+            return price;
         }
     }
 }
